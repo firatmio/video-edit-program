@@ -90,6 +90,7 @@ export function VideoPlayer(props: VideoPlayerProps) {
           <video
             ref={videoRef}
             src={props.src}
+            crossOrigin="anonymous"
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={() => setIsPlaying(true)}

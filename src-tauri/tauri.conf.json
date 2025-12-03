@@ -10,20 +10,8 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
-      {
-        "label": "splash",
-        "title": "Video Kesici",
-        "width": 400,
-        "height": 300,
-        "resizable": false,
-        "decorations": false,
-        "transparent": true,
-        "center": true,
-        "alwaysOnTop": true,
-        "skipTaskbar": true,
-        "url": "splash.html"
-      },
       {
         "label": "main",
         "title": "Video Kesici",
@@ -32,8 +20,9 @@
         "minWidth": 900,
         "minHeight": 600,
         "decorations": false,
-        "visible": false,
-        "center": true
+        "visible": true,
+        "center": true,
+        "backgroundColor": "#090909"
       }
     ],
     "security": {
@@ -56,7 +45,6 @@
     ],
     "externalBin": [
       "binaries/ffmpeg"
-    ],
-    "resources": ["splash.html"]
+    ]
   }
 }

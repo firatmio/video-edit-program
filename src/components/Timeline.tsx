@@ -23,8 +23,8 @@ export function Timeline(props: TimelineProps) {
   const [thumbnails, setThumbnails] = createSignal<string[]>([]);
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = createSignal(false);
 
-  const THUMBNAIL_WIDTH = 160;
-  const THUMBNAIL_HEIGHT = 90;
+  const THUMBNAIL_WIDTH = 142;
+  const THUMBNAIL_HEIGHT = 80;
   const MIN_ZOOM = 1;
   const MAX_ZOOM = 20;
 
@@ -50,61 +50,140 @@ export function Timeline(props: TimelineProps) {
     if (!props.videoElement || props.duration === 0 || isGeneratingThumbnails()) return;
     
     const video = props.videoElement;
+    
     if (video.readyState < 2) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      if (video.readyState < 2) return;
+      return;
     }
     
     setIsGeneratingThumbnails(true);
+    
+    const offscreenVideo = document.createElement('video');
+    offscreenVideo.crossOrigin = 'anonymous';
+    offscreenVideo.muted = true;
+    offscreenVideo.preload = 'metadata';
+    
+    offscreenVideo.src = video.src;
+    
     const canvas = document.createElement('canvas');
     canvas.width = THUMBNAIL_WIDTH;
     canvas.height = THUMBNAIL_HEIGHT;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    
     if (!ctx) {
       setIsGeneratingThumbnails(false);
       return;
     }
 
     const visibleWidth = getVisibleWidth();
-    const thumbnailCount = Math.max(Math.ceil(visibleWidth / THUMBNAIL_WIDTH) + 2, 5);
+    const thumbnailCount = Math.ceil(visibleWidth / THUMBNAIL_WIDTH) + 1;
     const interval = props.duration / thumbnailCount;
     const newThumbnails: string[] = [];
     
-    const originalTime = video.currentTime;
-    const wasPlaying = !video.paused;
-    if (wasPlaying) video.pause();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const onLoaded = () => {
+          offscreenVideo.removeEventListener('loadeddata', onLoaded);
+          offscreenVideo.removeEventListener('error', onError);
+          resolve();
+        };
+        const onError = () => {
+          offscreenVideo.removeEventListener('loadeddata', onLoaded);
+          offscreenVideo.removeEventListener('error', onError);
+          reject(new Error('Video yüklenemedi'));
+        };
+        offscreenVideo.addEventListener('loadeddata', onLoaded);
+        offscreenVideo.addEventListener('error', onError);
+        offscreenVideo.load();
+        
+        setTimeout(() => reject(new Error('Timeout')), 5000);
+      });
+    } catch (err) {
+      console.log('Offscreen video yüklenemedi, orijinal video kullanılacak');
+      for (let i = 0; i <= thumbnailCount; i++) {
+        const time = Math.min(i * interval, props.duration - 0.1);
+        
+        try {
+          await new Promise<void>((resolve) => {
+            const onSeeked = () => {
+              video.removeEventListener('seeked', onSeeked);
+              requestAnimationFrame(() => {
+                try {
+                  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                  const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                  newThumbnails.push(dataUrl);
+                } catch {
+                  ctx.fillStyle = '#333';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  ctx.fillStyle = '#666';
+                  ctx.font = '12px sans-serif';
+                  ctx.textAlign = 'center';
+                  ctx.fillText(formatTime(time), canvas.width / 2, canvas.height / 2);
+                  newThumbnails.push(canvas.toDataURL('image/jpeg', 0.7));
+                }
+                resolve();
+              });
+            };
+            video.addEventListener('seeked', onSeeked);
+            video.currentTime = time;
+            setTimeout(() => {
+              video.removeEventListener('seeked', onSeeked);
+              resolve();
+            }, 1000);
+          });
+        } catch {
+          newThumbnails.push('');
+        }
+      }
+      setThumbnails(newThumbnails);
+      setIsGeneratingThumbnails(false);
+      return;
+    }
     
     for (let i = 0; i <= thumbnailCount; i++) {
       const time = Math.min(i * interval, props.duration - 0.1);
       
       try {
         await new Promise<void>((resolve) => {
-          const timeout = setTimeout(() => {
-            video.removeEventListener('seeked', onSeeked);
-            resolve();
-          }, 2000);
-          
           const onSeeked = () => {
-            clearTimeout(timeout);
-            video.removeEventListener('seeked', onSeeked);
-            try {
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              newThumbnails.push(canvas.toDataURL('image/jpeg', 0.6));
-            } catch {
-              newThumbnails.push('');
+            offscreenVideo.removeEventListener('seeked', onSeeked);
+            requestAnimationFrame(() => {
+              try {
+                ctx.drawImage(offscreenVideo, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                newThumbnails.push(dataUrl);
+              } catch {
+                ctx.fillStyle = '#333';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(formatTime(time), canvas.width / 2, canvas.height / 2);
+                newThumbnails.push(canvas.toDataURL('image/jpeg', 0.7));
+              }
+              resolve();
+            });
+          };
+          
+          offscreenVideo.addEventListener('seeked', onSeeked);
+          offscreenVideo.currentTime = time;
+          
+          setTimeout(() => {
+            offscreenVideo.removeEventListener('seeked', onSeeked);
+            if (newThumbnails.length <= i) {
+              ctx.fillStyle = '#333';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              newThumbnails.push(canvas.toDataURL('image/jpeg', 0.7));
             }
             resolve();
-          };
-          video.addEventListener('seeked', onSeeked);
-          video.currentTime = time;
+          }, 2000);
         });
       } catch {
         newThumbnails.push('');
       }
     }
     
-    video.currentTime = originalTime;
-    if (wasPlaying) video.play();
+    offscreenVideo.src = '';
+    offscreenVideo.load();
     
     setThumbnails(newThumbnails);
     setIsGeneratingThumbnails(false);
@@ -114,10 +193,20 @@ export function Timeline(props: TimelineProps) {
     const video = props.videoElement;
     const dur = props.duration;
     
-    if (video && dur > 0 && thumbnails().length === 0) {
-      setTimeout(() => {
-        generateThumbnails();
-      }, 300);
+    if (video && dur > 0 && thumbnails().length === 0 && !isGeneratingThumbnails()) {
+      const tryGenerate = () => {
+        if (video.readyState >= 2) {
+          generateThumbnails();
+        } else {
+          const onLoaded = () => {
+            video.removeEventListener('loadeddata', onLoaded);
+            generateThumbnails();
+          };
+          video.addEventListener('loadeddata', onLoaded);
+        }
+      };
+      
+      setTimeout(tryGenerate, 500);
     }
   });
 
@@ -330,10 +419,15 @@ export function Timeline(props: TimelineProps) {
             transform: `translateX(${-scrollOffset()}px)`
           }}
         >
+          {isGeneratingThumbnails() && (
+            <div class="thumbnail-loading">
+              <span>Önizlemeler yükleniyor...</span>
+            </div>
+          )}
           <For each={thumbnails()}>
             {(thumb) => (
               <div class="timeline-thumbnail">
-                {thumb && <img src={thumb} alt="" />}
+                {thumb && <img src={thumb} alt="" draggable={false} />}
               </div>
             )}
           </For>

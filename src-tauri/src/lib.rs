@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
 use std::process::Command;
-use tauri::{Emitter, Manager};
+use tauri::Manager;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Segment {
@@ -171,21 +171,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![export_video, close_splash])
+        .invoke_handler(tauri::generate_handler![export_video])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-#[tauri::command]
-async fn close_splash(app_handle: tauri::AppHandle) {
-    if let Some(splash_window) = app_handle.get_webview_window("splash") {
-        let _ = splash_window.emit("close-splash", ());
-        std::thread::sleep(std::time::Duration::from_millis(350));
-        let _ = splash_window.close();
-    }
-    
-    if let Some(main_window) = app_handle.get_webview_window("main") {
-        let _ = main_window.show();
-        let _ = main_window.set_focus();
-    }
 }

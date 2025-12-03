@@ -105,7 +105,13 @@ function App() {
     document.addEventListener('dragleave', handleDragLeave);
     document.addEventListener('drop', handleDrop);
     
-    invoke('close_splash').catch(console.error);
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+      loadingScreen.classList.add('fade-out');
+      setTimeout(() => {
+        loadingScreen.remove();
+      }, 300);
+    }
   });
 
   onCleanup(() => {
@@ -173,7 +179,7 @@ function App() {
     if (!videoInfo() || segments().length === 0) return;
     
     const videoName = videoInfo()!.name.replace(/\.[^/.]+$/, '');
-    setBaseName(videoName);
+    setBaseName(videoName  + "_edited");
     
     const names = segments().map((_, i) => `${videoName}_${i + 1}`);
     setSegmentNames(names);
