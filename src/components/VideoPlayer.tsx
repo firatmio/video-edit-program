@@ -1,3 +1,13 @@
+import {
+    ChevronLeft,
+    ChevronRight,
+    Film,
+    Pause,
+    Play,
+    SkipBack,
+    SkipForward,
+    Volume2
+} from "lucide-solid";
 import { createEffect, createSignal, onMount } from "solid-js";
 
 interface VideoPlayerProps {
@@ -89,19 +99,19 @@ export function VideoPlayer(props: VideoPlayerProps) {
           <div class="video-controls">
             <div class="controls-left">
               <button class="control-btn" onClick={() => skipTime(-10)} title="10 saniye geri">
-                ⏪
+                <SkipBack size={18} />
               </button>
               <button class="control-btn" onClick={() => frameStep(false)} title="1 frame geri">
-                ◀
+                <ChevronLeft size={18} />
               </button>
               <button class="control-btn play-btn" onClick={togglePlay}>
-                {isPlaying() ? "⏸" : "▶"}
+                {isPlaying() ? <Pause size={22} /> : <Play size={22} />}
               </button>
               <button class="control-btn" onClick={() => frameStep(true)} title="1 frame ileri">
-                ▶
+                <ChevronRight size={18} />
               </button>
               <button class="control-btn" onClick={() => skipTime(10)} title="10 saniye ileri">
-                ⏩
+                <SkipForward size={18} />
               </button>
             </div>
             
@@ -119,7 +129,7 @@ export function VideoPlayer(props: VideoPlayerProps) {
             </div>
 
             <div class="controls-right">
-              <span class="volume-icon">🔊</span>
+              <Volume2 size={18} class="volume-icon" />
               <input
                 type="range"
                 min="0"
@@ -135,7 +145,7 @@ export function VideoPlayer(props: VideoPlayerProps) {
       ) : (
         <div class="video-placeholder">
           <div class="placeholder-content">
-            <span class="placeholder-icon">🎬</span>
+            <Film size={64} class="placeholder-icon" />
             <p>Video yüklemek için tıklayın</p>
           </div>
         </div>
