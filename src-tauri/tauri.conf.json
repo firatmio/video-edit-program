@@ -36,6 +36,11 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "Fırat Mio",
+    "copyright": "© 2025 Fırat Mio. Tüm hakları saklıdır.",
+    "category": "Video",
+    "shortDescription": "Basit ve hızlı video kesme aracı",
+    "longDescription": "Video Kesici, videolarınızı kolayca kesip birleştirmenizi sağlayan profesyonel bir masaüstü uygulamasıdır.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -45,6 +50,16 @@
     ],
     "externalBin": [
       "binaries/ffmpeg"
-    ]
+    ],
+    "windows": {
+      "digestAlgorithm": "sha256",
+      "wix": {
+        "language": "tr-TR"
+      },
+      "nsis": {
+        "languages": ["Turkish"],
+        "displayLanguageSelector": false
+      }
+    }
   }
 }
