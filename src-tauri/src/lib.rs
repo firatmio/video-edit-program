@@ -15,7 +15,6 @@ pub struct ExportResult {
     message: String,
 }
 
-// FFmpeg'in yüklü olup olmadığını kontrol et
 fn check_ffmpeg() -> bool {
     Command::new("ffmpeg")
         .arg("-version")
@@ -23,7 +22,6 @@ fn check_ffmpeg() -> bool {
         .is_ok()
 }
 
-// Zamanı FFmpeg formatına çevir (HH:MM:SS.mmm)
 fn format_time(seconds: f64) -> String {
     let hours = (seconds / 3600.0).floor() as i32;
     let minutes = ((seconds % 3600.0) / 60.0).floor() as i32;
@@ -37,7 +35,6 @@ async fn export_video(
     output_path: String,
     segments: Vec<Segment>,
 ) -> Result<ExportResult, String> {
-    // FFmpeg kontrolü
     if !check_ffmpeg() {
         return Err("FFmpeg bulunamadı! Lütfen FFmpeg'i yükleyin ve PATH'e ekleyin.".to_string());
     }
@@ -46,13 +43,11 @@ async fn export_video(
         return Err("En az bir kesim bölgesi seçmelisiniz.".to_string());
     }
 
-    // Geçici dosya dizini
     let temp_dir = std::env::temp_dir().join("video_cutter_temp");
     fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
 
     let mut temp_files: Vec<String> = Vec::new();
 
-    // Her segment için ayrı dosya oluştur
     for (i, segment) in segments.iter().enumerate() {
         let temp_output = temp_dir.join(format!("segment_{}.mp4", i));
         let temp_output_str = temp_output.to_string_lossy().to_string();
@@ -74,7 +69,6 @@ async fn export_video(
             .map_err(|e| format!("FFmpeg çalıştırılamadı: {}", e))?;
 
         if !status.status.success() {
-            // Temizlik
             for f in &temp_files {
                 let _ = fs::remove_file(f);
             }
@@ -87,11 +81,9 @@ async fn export_video(
         temp_files.push(temp_output_str);
     }
 
-    // Tek segment varsa direkt kopyala
     if temp_files.len() == 1 {
         fs::copy(&temp_files[0], &output_path).map_err(|e| e.to_string())?;
     } else {
-        // Birden fazla segment varsa birleştir
         let concat_file = temp_dir.join("concat_list.txt");
         let mut file = fs::File::create(&concat_file).map_err(|e| e.to_string())?;
         
@@ -119,7 +111,6 @@ async fn export_video(
         }
     }
 
-    // Temizlik
     for f in &temp_files {
         let _ = fs::remove_file(f);
     }

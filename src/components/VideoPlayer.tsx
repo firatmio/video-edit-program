@@ -68,7 +68,6 @@ export function VideoPlayer(props: VideoPlayerProps) {
 
   const frameStep = (forward: boolean) => {
     if (videoRef) {
-      // 30fps varsayımıyla 1 frame = ~0.033 saniye
       const frameTime = 1 / 30;
       videoRef.currentTime += forward ? frameTime : -frameTime;
     }

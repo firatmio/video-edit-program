@@ -1,16 +1,13 @@
-// Video kesim bölgesi tipi
 export interface CutSegment {
   id: string;
-  startTime: number; // saniye
-  endTime: number;   // saniye
+  startTime: number;
+  endTime: number;
 }
 
-// Video bilgisi
 export interface VideoInfo {
   path: string;
   name: string;
-  duration: number; // saniye
+  duration: number;
 }
 
-// Export durumu
 export type ExportStatus = 'idle' | 'processing' | 'done' | 'error';

@@ -52,7 +52,6 @@ export function Timeline(props: TimelineProps) {
     document.addEventListener('mouseup', onMouseUp);
   };
 
-  // Zaman işaretleri oluştur
   const timeMarkers = createMemo(() => {
     if (props.duration === 0) return [];
     const markers = [];
